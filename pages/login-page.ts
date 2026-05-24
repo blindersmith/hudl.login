@@ -79,18 +79,17 @@ export class LoginPage {
     await this.passwordInput.waitFor({ state: "visible" });
   }
 
-  async isLoaded(): Promise<boolean> {
-    const emailVisible = await this.emailInput.isVisible();
-    const continueVisible = await this.continueButton.isVisible();
-    return emailVisible && continueVisible;
-  }
-
   async hasEmailValidationError(): Promise<boolean> {
     const nativeMsg = await this.emailInput.evaluate(
       (el: HTMLInputElement) => el.validationMessage,
     );
     if (nativeMsg.length > 0) return true;
-    return this.errorMessage.isVisible();
+    try {
+      await this.errorMessage.waitFor({ state: "visible", timeout: 3000 });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async hasPasswordValidationError(): Promise<boolean> {
@@ -98,7 +97,16 @@ export class LoginPage {
       (el: HTMLInputElement) => el.validationMessage,
     );
     if (nativeMsg.length > 0) return true;
-    return this.errorMessage.isVisible();
+    try {
+      await this.errorMessage.waitFor({ state: "visible", timeout: 3000 });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async pressEnterOnEmail(): Promise<void> {
+    await this.emailInput.press("Enter");
   }
 
   async getErrorMessageText(): Promise<string> {

@@ -15,14 +15,15 @@ test.describe("Hudl Login — Step 1 (Email)", () => {
   });
 
   test("@smoke login page loads with email input and continue button", async ({ page }) => {
-    expect(await loginPage.isLoaded()).toBe(true);
+    await expect(loginPage.emailInput).toBeVisible();
+    await expect(loginPage.continueButton).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
   });
 
   test("rejects empty email when continue is clicked", async ({ page }) => {
     await loginPage.clickContinue();
 
-    expect(await loginPage.hasEmailValidationError()).toBe(true);
+    await expect.poll(() => loginPage.hasEmailValidationError()).toBe(true);
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -30,7 +31,7 @@ test.describe("Hudl Login — Step 1 (Email)", () => {
     await loginPage.fillEmail("notanemail");
     await loginPage.clickContinue();
 
-    expect(await loginPage.hasEmailValidationError()).toBe(true);
+    await expect.poll(() => loginPage.hasEmailValidationError()).toBe(true);
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -45,7 +46,14 @@ test.describe("Hudl Login — Step 1 (Email)", () => {
   test("email field accepts text input", async () => {
     const inputType = await loginPage.getEmailInputType();
 
-    expect(inputType === "email" || inputType === "text").toBe(true);
+    expect(["email", "text"]).toContain(inputType);
+  });
+
+  test("submits email step with Enter key", async () => {
+    await loginPage.fillEmail("notregistered.nobody@example.com");
+    await loginPage.pressEnterOnEmail();
+
+    await loginPage.waitForPasswordStep();
   });
 });
 
@@ -79,7 +87,7 @@ test.describe("Hudl Login — Step 2 (Password)", () => {
 
     const errorText = await loginPage.getErrorMessageText();
 
-    expect(errorText.length).toBeGreaterThan(0);
+    expect(errorText).toBeTruthy();
   });
 
   test("shows error for unrecognized email and any password", async () => {
@@ -91,13 +99,13 @@ test.describe("Hudl Login — Step 2 (Password)", () => {
 
     const errorText = await loginPage.getErrorMessageText();
 
-    expect(errorText.length).toBeGreaterThan(0);
+    expect(errorText).toBeTruthy();
   });
 
   test("rejects empty password when submit is clicked", async ({ page }) => {
     await loginPage.clickSubmit();
 
-    expect(await loginPage.hasPasswordValidationError()).toBe(true);
+    await expect.poll(() => loginPage.hasPasswordValidationError()).toBe(true);
     await expect(page).toHaveURL(/\/login/);
   });
 
