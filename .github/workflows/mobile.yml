@@ -1,16 +1,12 @@
-name: Full Suite
+name: Mobile Tests
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
-  test:
+  mobile:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -24,17 +20,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium webkit
 
       - name: Create auth directory
         run: mkdir -p .auth
 
-      - name: Run all tests (auth once, 4 workers)
-        run: npx playwright test
+      - name: Run mobile tests (auth once, 4 workers)
+        run: npx playwright test --project=mobile-chrome --project=mobile-safari
         env:
           CI: true
           HUDL_ENV: production
@@ -47,7 +40,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: playwright-report-full
+          name: playwright-report-mobile
           path: playwright-report/
           retention-days: 30
 
@@ -55,7 +48,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: test-results-full
+          name: test-results-mobile
           path: test-results/
           retention-days: 7
           if-no-files-found: ignore
@@ -68,7 +61,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: allure-report-full
+          name: allure-report-mobile
           path: allure-report/
           retention-days: 30
 
@@ -88,7 +81,7 @@ jobs:
         with:
           payload: |
             {
-              "text": ":white_check_mark: *Hudl Login E2E — Full suite passed*",
+              "text": ":white_check_mark: *Hudl Login E2E — Mobile tests passed*",
               "attachments": [
                 {
                   "color": "good",

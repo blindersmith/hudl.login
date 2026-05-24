@@ -1,16 +1,12 @@
-name: Full Suite
+name: Desktop Tests
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
-  test:
+  desktop:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -24,17 +20,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit
+        run: npx playwright install --with-deps chromium
 
       - name: Create auth directory
         run: mkdir -p .auth
 
-      - name: Run all tests (auth once, 4 workers)
-        run: npx playwright test
+      - name: Run desktop tests (auth once, 4 workers)
+        run: npx playwright test --project=chromium
         env:
           CI: true
           HUDL_ENV: production
@@ -47,7 +40,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: playwright-report-full
+          name: playwright-report-desktop
           path: playwright-report/
           retention-days: 30
 
@@ -55,7 +48,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: test-results-full
+          name: test-results-desktop
           path: test-results/
           retention-days: 7
           if-no-files-found: ignore
@@ -68,7 +61,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: allure-report-full
+          name: allure-report-desktop
           path: allure-report/
           retention-days: 30
 
@@ -88,7 +81,7 @@ jobs:
         with:
           payload: |
             {
-              "text": ":white_check_mark: *Hudl Login E2E — Full suite passed*",
+              "text": ":white_check_mark: *Hudl Login E2E — Desktop tests passed*",
               "attachments": [
                 {
                   "color": "good",

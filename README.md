@@ -73,7 +73,7 @@ HUDL_ENV=production             # or: staging
 
 Tests run **headless** (no visible browser window) by default. Use `test:headed` to watch the browser in action.
 
-All runs use **2 parallel workers** by default — both locally and in CI.
+Auth runs once before any tests start and the session is saved to `.auth/user.json`. All workers share that file — no re-authentication happens in parallel. Locally, Playwright uses its default worker count (based on CPU cores). CI uses 2 workers.
 
 ### Run all tests
 
@@ -91,18 +91,6 @@ npm run test:smoke
 
 ```bash
 npm run test:headed
-```
-
-### View the HTML report after a run
-
-```bash
-npm run test:report
-```
-
-This starts a local server and opens the report automatically at **http://localhost:9323**. If your browser does not open, navigate there manually. If port 9323 is already in use:
-
-```bash
-npx playwright show-report --port 9324
 ```
 
 ### Run against a specific environment
@@ -123,43 +111,23 @@ $env:HUDL_ENV="staging"; npm test
 
 ## Reporting
 
-Two reporters run on every test run: the built-in Playwright HTML reporter and Allure.
-
 ### Playwright HTML Report
 
-Generated automatically into `playwright-report/`. Open it with:
+Generated automatically into `playwright-report/` on every local run. Open it with:
 
 ```bash
 npm run test:report
 ```
 
-### Allure Report
-
-`allure-playwright` is already installed as a dev dependency. After running the test suite, `allure-results/` is populated. Use `npx` to run the Allure CLI directly — no global install required.
-
-#### One-step: generate and open
+This starts a local server and opens the report at **http://localhost:9323**. If your browser does not open, navigate there manually. If port 9323 is in use:
 
 ```bash
-npx allure serve allure-results
+npx playwright show-report --port 9324
 ```
 
-This generates a temporary report and opens it automatically in your browser on a random available port.
+### Allure Report (CI only)
 
-#### Two-step: generate then open
-
-```bash
-# Generate a static report into allure-report/
-npx allure generate --output allure-report allure-results
-
-# Open the report — auto-launches your browser on a random available port
-npx allure open allure-report
-```
-
-To pin a specific port:
-
-```bash
-npx allure open allure-report --port 9326
-```
+The Allure reporter is enabled in CI only. After a GitHub Actions run, the `allure-report` artifact is uploaded and retained for 30 days. Download it from the run's **Artifacts** section and open `index.html` locally.
 
 > Both `allure-results/` and `allure-report/` are gitignored and never committed.
 
@@ -171,7 +139,10 @@ npx allure open allure-report --port 9326
 hudl.login/
 ├── .github/
 │   └── workflows/
-│       └── playwright.yml      # GitHub Actions CI pipeline
+│       ├── playwright.yml      # Full suite — push/PR to main + manual
+│       ├── smoke.yml           # Smoke tests — push/PR to main + manual
+│       ├── desktop.yml         # Desktop (chromium) — manual only
+│       └── mobile.yml          # Mobile (Pixel 7 + iPhone 15) — manual only
 ├── pages/
 │   ├── login-page.ts           # Login page object (two-step: email → password)
 │   ├── signup-page.ts          # Create Account page object
@@ -192,9 +163,8 @@ hudl.login/
 ├── .env.sample                 # Credential template (committed)
 ├── eslint.config.js
 ├── .prettierrc
-├── bestpractices.md            # Team Playwright coding standards
+├── bestpractices.md            # Playwright coding standards — read before adding tests
 ├── playwright.config.ts        # Playwright configuration
-├── run-stress-test.sh          # stability script: 10 headless, 10 headed, or both (--both)
 ├── tsconfig.json
 └── package.json
 ```
@@ -363,7 +333,24 @@ npm run format:check  # check formatting without writing
 
 ## CI/CD — GitHub Actions
 
-The pipeline runs automatically on every push and pull request to `main`. Manual runs are also supported via `workflow_dispatch`.
+Four workflows are available, each authenticating once and running with 4 workers.
+
+| Workflow | File | Trigger | Browsers | Command |
+| -------- | ---- | ------- | -------- | ------- |
+| Full Suite | `playwright.yml` | push/PR to `main`, manual | chromium, mobile-chrome, mobile-safari | `playwright test` |
+| Smoke Tests | `smoke.yml` | push/PR to `main`, manual | chromium, mobile-chrome, mobile-safari | `playwright test --grep @smoke` |
+| Desktop Tests | `desktop.yml` | manual only | chromium | `playwright test --project=chromium` |
+| Mobile Tests | `mobile.yml` | manual only | mobile-chrome, mobile-safari | `playwright test --project=mobile-chrome --project=mobile-safari` |
+
+In every workflow, auth runs once via the `setup` project (which Playwright resolves automatically through project dependencies), writes `.auth/user.json`, and all 4 workers share that session file.
+
+Each workflow uploads three artifacts retained after the run:
+
+| Artifact | Retention |
+| -------- | --------- |
+| `playwright-report-<suite>` | 30 days |
+| `test-results-<suite>` | 7 days |
+| `allure-report-<suite>` | 30 days |
 
 ### Required GitHub Secrets
 
@@ -377,18 +364,17 @@ Add these under **Settings → Secrets and variables → Actions**:
 | `HUDL_ADMIN_PASSWORD` | No       | Admin account password — falls back to `HUDL_PASSWORD`        |
 | `SLACK_WEBHOOK_URL`   | No       | Incoming webhook URL — Slack step is skipped safely if absent |
 
-The workflow:
+### Steps run in every workflow
 
-1. Installs Node.js 24 and npm dependencies
-2. Runs ESLint — fails fast if lint errors are present
-3. Installs Chromium and WebKit browsers (required for mobile-safari project)
-4. Runs all 172 tests across `chromium`, `mobile-chrome`, and `mobile-safari` (2 retries on failure in CI)
-5. Uploads the Playwright HTML report as an artifact (retained 30 days)
-6. Uploads raw test results as an artifact (retained 7 days)
-7. Generates and uploads the Allure report as an artifact (retained 30 days)
-8. Sends a Slack notification on success (requires `SLACK_WEBHOOK_URL` secret — skipped safely if not configured)
+1. Checkout repository
+2. Set up Node.js 24 and install dependencies (`npm ci`)
+3. Lint (Full Suite only — fast gate before running tests)
+4. Install Playwright browsers (`chromium` + `webkit` where needed)
+5. Run tests — auth fires once, 4 workers run in parallel
+6. Upload Playwright HTML report, raw test results, and Allure report as artifacts
+7. Send Slack notification on success (skipped safely if `SLACK_WEBHOOK_URL` is not set)
 
-> **Viewing CI reports:** After a workflow run, go to the run page on GitHub → **Artifacts** section at the bottom. Download `playwright-report` or `allure-report` and open `index.html` locally. GitHub does not serve HTML reports directly due to CSP restrictions.
+> **Viewing CI reports:** Go to the workflow run on GitHub → **Artifacts** at the bottom. Download `playwright-report-<suite>` or `allure-report-<suite>` and open `index.html` locally. GitHub does not serve HTML directly due to CSP restrictions.
 
 ### Gitignored Files (never committed)
 
@@ -399,6 +385,8 @@ The workflow:
 | `node_modules/`      | Installed packages            |
 | `test-results/`      | Raw test output               |
 | `playwright-report/` | HTML report                   |
+| `allure-results/`    | Raw Allure data               |
+| `allure-report/`     | Generated Allure report       |
 
 ---
 
@@ -409,8 +397,42 @@ Key settings in `playwright.config.ts`:
 | Setting    | Local          | CI             |
 | ---------- | -------------- | -------------- |
 | Retries    | 0              | 2              |
-| Workers    | 2              | 2              |
+| Workers    | 4              | 4              |
 | Headless   | Yes            | Yes            |
 | Trace      | On first retry | On first retry |
 | Screenshot | On failure     | On failure     |
 | Video      | On failure     | On failure     |
+
+---
+
+## Contributing
+
+Before adding or modifying tests, read [bestpractices.md](bestpractices.md) — it documents the team's Playwright coding standards for page objects, selectors, assertions, and test structure.
+
+---
+
+## Troubleshooting
+
+**Auth session errors / tests fail before reaching the login page**
+Delete the cached session and re-run — it will be regenerated automatically:
+
+```bash
+# macOS / Linux
+rm -f .auth/user.json
+
+# Windows (PowerShell)
+Remove-Item .auth\user.json -ErrorAction SilentlyContinue
+```
+
+**`.env` file not found**
+Make sure you've copied `.env.sample` to `.env` (see [Setup](#setup)) and filled in your credentials. The file must be in the project root.
+
+**Tests pass locally but fail in CI**
+Check that all required GitHub Secrets are set under **Settings → Secrets and variables → Actions**. A missing `HUDL_EMAIL` or `HUDL_PASSWORD` will cause auth setup to fail before any tests run.
+
+**Browser not installed**
+Re-run the browser install step:
+
+```bash
+npx playwright install chromium webkit
+```
