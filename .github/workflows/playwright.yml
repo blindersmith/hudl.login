@@ -1,0 +1,86 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          CI: true
+          HUDL_ENV: production
+          HUDL_EMAIL: ${{ secrets.HUDL_EMAIL }}
+          HUDL_PASSWORD: ${{ secrets.HUDL_PASSWORD }}
+          HUDL_ADMIN_EMAIL: ${{ secrets.HUDL_ADMIN_EMAIL }}
+          HUDL_ADMIN_PASSWORD: ${{ secrets.HUDL_ADMIN_PASSWORD }}
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 7
+
+      # ------------------------------------------------------------------ #
+      # Slack notification — add SLACK_WEBHOOK_URL to repository secrets    #
+      # and install the Slack GitHub app on your workspace before enabling. #
+      # Docs: https://github.com/slackapi/slack-github-action                #
+      # ------------------------------------------------------------------ #
+      - name: Notify Slack on success
+        if: success()
+        continue-on-error: true
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": ":white_check_mark: *Hudl Login E2E — All tests passed*",
+              "attachments": [
+                {
+                  "color": "good",
+                  "fields": [
+                    { "title": "Branch",    "value": "${{ github.ref_name }}",   "short": true },
+                    { "title": "Triggered", "value": "${{ github.actor }}",       "short": true },
+                    { "title": "Run",       "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
