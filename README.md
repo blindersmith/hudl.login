@@ -6,7 +6,7 @@ A production-ready Playwright test suite validating the Hudl login flow at [http
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) v20 or higher
+- [Node.js](https://nodejs.org/) v24 or higher
 - npm v10 or higher
 
 Verify your versions:
@@ -315,7 +315,7 @@ Add these under **Settings → Secrets and variables → Actions**:
 
 The workflow:
 
-1. Installs Node.js 20 and npm dependencies
+1. Installs Node.js 24 and npm dependencies
 2. Runs ESLint — fails fast if lint errors are present
 3. Installs Chromium and WebKit browsers (required for mobile-safari project)
 4. Runs all 37 tests across `chromium`, `mobile-chrome`, and `mobile-safari` (2 retries on failure in CI)

@@ -11,6 +11,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -19,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
 
       - name: Install dependencies
@@ -56,6 +58,7 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 7
+          if-no-files-found: ignore
 
       - name: Generate Allure report
         if: always()
@@ -74,9 +77,18 @@ jobs:
       # and install the Slack GitHub app on your workspace before enabling. #
       # Docs: https://github.com/slackapi/slack-github-action                #
       # ------------------------------------------------------------------ #
-      - name: Notify Slack on success
+      - name: Check Slack configuration
+        id: slack_check
         if: success()
-        continue-on-error: true
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on success
+        if: success() && steps.slack_check.outputs.configured == 'true'
         uses: slackapi/slack-github-action@v1.27.0
         with:
           payload: |
