@@ -174,9 +174,15 @@ hudl.login/
 │       └── playwright.yml      # GitHub Actions CI pipeline
 ├── pages/
 │   ├── login-page.ts           # Login page object (two-step: email → password)
-│   └── navigation.page.ts      # URL-based navigation helpers
+│   ├── signup-page.ts          # Create Account page object
+│   ├── privacy-policy-page.ts  # Privacy Policy page object
+│   ├── terms-page.ts           # Terms of Service page object
+│   └── navigation.page.ts      # URL-based navigation helpers and auth check
 ├── tests/
-│   └── login.spec.ts           # Login test suite (12 tests × 3 browsers = 36 + 1 setup)
+│   ├── login.spec.ts           # Login flow — 38 tests × 3 browsers
+│   ├── signup.spec.ts          # Create Account page — 14 tests × 3 browsers
+│   ├── privacy-policy.spec.ts  # Privacy Policy page — 3 tests × 3 browsers
+│   └── terms.spec.ts           # Terms of Service page — 2 tests × 3 browsers
 ├── utils/
 │   ├── auth.setup.ts           # Global auth setup — logs in and saves session
 │   ├── env.ts                  # Env var loader, environment type and base URLs
@@ -188,7 +194,7 @@ hudl.login/
 ├── .prettierrc
 ├── bestpractices.md            # Team Playwright coding standards
 ├── playwright.config.ts        # Playwright configuration
-├── run-stress-test.sh          # 10-run stability script (outputs stress-report-<mode>.md)
+├── run-stress-test.sh          # stability script: 10 headless, 10 headed, or both (--both)
 ├── tsconfig.json
 └── package.json
 ```
@@ -197,9 +203,7 @@ hudl.login/
 
 ## Test Coverage
 
-All tests target `https://www.hudl.com/login`. The flow is two-step: email first, then password on a second screen hosted on `identity.hudl.com`.
-
-Every test runs across three browser projects automatically:
+57 spec tests × 3 browser projects = 171 test runs + 1 auth setup = **172 total**. Every test runs across desktop Chrome, mobile Chrome (Pixel 7), and mobile Safari (iPhone 15).
 
 | Project         | Device             | Viewport  |
 | --------------- | ------------------ | --------- |
@@ -207,27 +211,87 @@ Every test runs across three browser projects automatically:
 | `mobile-chrome` | Pixel 7 (Android)  | 412×915   |
 | `mobile-safari` | iPhone 15 (Safari) | 393×852   |
 
-### Step 1 — Email
+### Login — Step 1 (Email)  `login.spec.ts`
 
 | #   | Test                                                                  | Tag      |
 | --- | --------------------------------------------------------------------- | -------- |
 | 1   | Login page loads with email input and continue button                 | `@smoke` |
-| 2   | Rejects empty email when continue is clicked                          |          |
-| 3   | Rejects invalid email format before reaching password step            |          |
-| 4   | Advances to password step for any valid-format email (no enumeration) |          |
-| 5   | Email field accepts text input                                        |          |
-| 6   | Submits email step with Enter key                                     |          |
+| 2   | Hudl logo is visible                                                  |          |
+| 3   | Log in heading is visible                                             |          |
+| 4   | Email label is visible                                                |          |
+| 5   | Rejects empty email when continue is clicked                          |          |
+| 6   | Rejects invalid email format before reaching password step            |          |
+| 7   | Advances to password step for any valid-format email (no enumeration) |          |
+| 8   | Email field accepts text input                                        |          |
+| 9   | Submits email step with Enter key                                     |          |
+| 10  | Or divider is visible between form and social options                 |          |
+| 11  | Continue with Google button is visible                                |          |
+| 12  | Continue with Facebook button is visible                              |          |
+| 13  | Continue with Apple button is visible                                 |          |
+| 14  | Create account link is visible                                        |          |
+| 15  | Legal consent text is visible                                         |          |
+| 16  | Privacy policy link is visible and points to hudl.com/privacy         |          |
+| 17  | Terms of service link is visible and points to hudl.com/terms         |          |
 
-### Step 2 — Password
+### Login — Step 2 (Password)  `login.spec.ts`
 
 | #   | Test                                                              | Tag      |
 | --- | ----------------------------------------------------------------- | -------- |
-| 7   | Successful login with valid credentials redirects away from login | `@smoke` |
-| 8   | Shows error for incorrect password                                |          |
-| 9   | Shows error for unrecognized email and any password               |          |
-| 10  | Rejects empty password when submit is clicked                     |          |
-| 11  | Password field masks input                                        |          |
-| 12  | Forgot password link navigates to password reset page             |          |
+| 18  | Successful login with valid credentials redirects to home         | `@smoke` |
+| 19  | Shows error for incorrect password                                |          |
+| 20  | Shows error for unrecognized email and any password               |          |
+| 21  | Rejects empty password when submit is clicked                     |          |
+| 22  | Password field masks input                                        |          |
+| 23  | Password step has a show/hide toggle button                       |          |
+| 24  | Show/hide toggle reveals password as plain text                   |          |
+| 25  | Show/hide toggle re-masks password after reveal                   |          |
+| 26  | Hudl logo is visible                                              |          |
+| 27  | Log in heading is visible                                         |          |
+| 28  | Email display label is visible                                    |          |
+| 29  | Submitted email is shown in the email display field               |          |
+| 30  | Edit email link is visible                                        |          |
+| 31  | Edit email link returns to email step                             |          |
+| 32  | Password label is visible                                         |          |
+| 33  | Password required indicator is visible                            |          |
+| 34  | Forgot password link navigates to password reset page             |          |
+| 35  | Create account link is visible                                    |          |
+| 36  | Legal consent text is visible                                     |          |
+| 37  | Privacy policy link is visible and points to hudl.com/privacy     |          |
+| 38  | Terms of service link is visible and points to hudl.com/terms     |          |
+
+### Create Account Page  `signup.spec.ts`
+
+| #   | Test                                         | Tag      |
+| --- | -------------------------------------------- | -------- |
+| 1   | Create account page loads with correct heading | `@smoke` |
+| 2   | First name label and input are visible       |          |
+| 3   | Last name label and input are visible        |          |
+| 4   | Email label and input are visible            |          |
+| 5   | Continue button is visible                   |          |
+| 6   | Or divider is visible                        |          |
+| 7   | Continue with Google button is visible       |          |
+| 8   | Continue with Facebook button is visible     |          |
+| 9   | Continue with Apple button is visible        |          |
+| 10  | Already have an account text is visible      |          |
+| 11  | Log in link is visible                       |          |
+| 12  | Legal consent text is visible                |          |
+| 13  | Privacy policy link is visible               |          |
+| 14  | Terms of service link is visible             |          |
+
+### Privacy Policy Page  `privacy-policy.spec.ts`
+
+| #   | Test                                                          | Tag      |
+| --- | ------------------------------------------------------------- | -------- |
+| 1   | Privacy policy page loads with correct heading                | `@smoke` |
+| 2   | Privacy policy page contains opening statement                |          |
+| 3   | Privacy policy page is reachable from login page privacy link |          |
+
+### Terms of Service Page  `terms.spec.ts`
+
+| #   | Test                                                              | Tag      |
+| --- | ----------------------------------------------------------------- | -------- |
+| 1   | Terms of service page loads with correct heading                  | `@smoke` |
+| 2   | Terms of service page is reachable from login page terms link     |          |
 
 ---
 
@@ -318,7 +382,7 @@ The workflow:
 1. Installs Node.js 24 and npm dependencies
 2. Runs ESLint — fails fast if lint errors are present
 3. Installs Chromium and WebKit browsers (required for mobile-safari project)
-4. Runs all 37 tests across `chromium`, `mobile-chrome`, and `mobile-safari` (2 retries on failure in CI)
+4. Runs all 172 tests across `chromium`, `mobile-chrome`, and `mobile-safari` (2 retries on failure in CI)
 5. Uploads the Playwright HTML report as an artifact (retained 30 days)
 6. Uploads raw test results as an artifact (retained 7 days)
 7. Generates and uploads the Allure report as an artifact (retained 30 days)

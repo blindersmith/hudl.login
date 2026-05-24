@@ -1,27 +1,54 @@
 #!/usr/bin/env bash
 # Runs the full test suite N times, wiping auth state before each run.
-# Usage: bash run-stress-test.sh [--headed]
-# Failures are captured with full output. Results written to stress-report.md.
+# Usage:
+#   bash run-stress-test.sh              # 10 headless runs
+#   bash run-stress-test.sh --headed     # 10 headed runs
+#   bash run-stress-test.sh --both       # 10 headless + 10 headed (separate reports)
 
 RUNS=10
 AUTH_FILE=".auth/user.json"
+
+# ── Parse flags ──────────────────────────────────────────────────────────────
+HEADED=false
+BOTH=false
+for arg in "$@"; do
+  case "$arg" in
+    --headed) HEADED=true ;;
+    --both)   BOTH=true ;;
+  esac
+done
+
+# --both: run headless then headed, each with a fresh invocation
+if [ "$BOTH" = true ]; then
+  echo "▶  Running headless pass..."
+  bash "$0"
+  HEADLESS_EXIT=$?
+
+  echo ""
+  echo "▶  Running headed pass..."
+  bash "$0" --headed
+  HEADED_EXIT=$?
+
+  echo ""
+  echo "================================================"
+  echo "  Full stress run complete"
+  echo "  Headless: $([ $HEADLESS_EXIT -eq 0 ] && echo 'ALL PASSED' || echo 'FAILURES — see stress-report-headless.md')"
+  echo "  Headed:   $([ $HEADED_EXIT -eq 0 ] && echo 'ALL PASSED' || echo 'FAILURES — see stress-report-headed.md')"
+  echo "================================================"
+  exit $(( HEADLESS_EXIT | HEADED_EXIT ))
+fi
+
+HEADED_FLAG=""
+MODE="headless"
+if [ "$HEADED" = true ]; then
+  HEADED_FLAG="--headed"
+  MODE="headed"
+fi
+
+REPORT="stress-report-${MODE}.md"
 PASS=0
 FAIL=0
 FAILED_RUNS=()
-
-# Parse optional --headed flag
-HEADED=false
-HEADED_FLAG=""
-MODE="headless"
-for arg in "$@"; do
-  if [ "$arg" = "--headed" ]; then
-    HEADED=true
-    HEADED_FLAG="--headed"
-    MODE="headed"
-  fi
-done
-
-REPORT="stress-report-${MODE}.md"
 
 {
   echo "# Stress Test Report"
@@ -58,6 +85,10 @@ for i in $(seq 1 $RUNS); do
     FAIL=$((FAIL + 1))
     FAILED_RUNS+=("$i")
     echo "   ❌ FAIL — ${SUMMARY} (${DURATION}s)"
+    echo ""
+    echo "--- FAILURE OUTPUT (Run $i) ---"
+    echo "$OUTPUT"
+    echo "--- END FAILURE OUTPUT ---"
   fi
 
   {
@@ -110,6 +141,7 @@ echo "================================================"
 echo "  Stress test complete [$MODE]: $PASS / $RUNS passed"
 if [ ${#FAILED_RUNS[@]} -gt 0 ]; then
   echo "  Failed on runs: ${FAILED_RUNS[*]}"
+  echo "  Full failure output above and in: $REPORT"
 fi
 echo "  Report: $REPORT"
 echo "================================================"
