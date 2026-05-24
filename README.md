@@ -24,7 +24,7 @@ npm --version
 
 ```bash
 git clone <your-repo-url>
-cd hudl2
+cd hudl.login
 ```
 
 ### 2. Install dependencies
@@ -62,6 +62,10 @@ HUDL_ENV=production             # or: staging
 ---
 
 ## Running Tests
+
+Tests run **headless** (no visible browser window) by default. Use `test:headed` to watch the browser in action.
+
+All runs use **2 parallel workers** by default — both locally and in CI.
 
 ### Run all tests
 
@@ -134,7 +138,7 @@ npx allure serve allure-results
 ## Project Structure
 
 ```
-hudl2/
+hudl.login/
 ├── .github/
 │   └── workflows/
 │       └── playwright.yml      # GitHub Actions CI pipeline
@@ -142,7 +146,7 @@ hudl2/
 │   ├── login-page.ts           # Login page object (two-step: email → password)
 │   └── navigation.page.ts      # URL-based navigation helpers
 ├── tests/
-│   └── login.spec.ts           # Login test suite (11 tests, grouped by step)
+│   └── login.spec.ts           # Login test suite (12 tests, grouped by step)
 ├── utils/
 │   ├── auth.setup.ts           # Global auth setup — logs in and saves session
 │   ├── env.ts                  # Env var loader, environment type and base URLs
@@ -173,17 +177,18 @@ All tests target `https://www.hudl.com/login`. The flow is two-step: email first
 | 3 | Rejects invalid email format before reaching password step | |
 | 4 | Advances to password step for any valid-format email (no enumeration) | |
 | 5 | Email field accepts text input | |
+| 6 | Submits email step with Enter key | |
 
 ### Step 2 — Password
 
 | # | Test | Tag |
 |---|------|-----|
-| 6  | Successful login with valid credentials redirects away from login | `@smoke` |
-| 7  | Shows error for incorrect password | |
-| 8  | Shows error for unrecognized email and any password | |
-| 9  | Rejects empty password when submit is clicked | |
-| 10 | Password field masks input | |
-| 11 | Forgot password link navigates to password reset page | |
+| 7  | Successful login with valid credentials redirects away from login | `@smoke` |
+| 8  | Shows error for incorrect password | |
+| 9  | Shows error for unrecognized email and any password | |
+| 10 | Rejects empty password when submit is clicked | |
+| 11 | Password field masks input | |
+| 12 | Forgot password link navigates to password reset page | |
 
 ---
 
@@ -297,7 +302,8 @@ Key settings in `playwright.config.ts`:
 | Setting | Local | CI |
 |---------|-------|----|
 | Retries | 0 | 2 |
-| Workers | Auto | 2 |
+| Workers | 2 | 2 |
+| Headless | Yes | Yes |
 | Trace | On first retry | On first retry |
 | Screenshot | On failure | On failure |
 | Video | On failure | On failure |

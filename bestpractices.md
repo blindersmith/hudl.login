@@ -27,7 +27,7 @@ Target: **https://www.hudl.com/login**
 ## Project Structure
 
 ```
-hudl2/
+hudl.login/
 ├── .github/workflows/       — CI pipeline (GitHub Actions)
 ├── pages/                   — Page Object Model classes
 │   ├── login-page.ts        — Login form (two-step: email → Continue → password)
