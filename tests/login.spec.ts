@@ -69,9 +69,7 @@ test.describe("Hudl Login — Step 2 (Password)", () => {
     await loginPage.waitForPasswordStep();
   });
 
-  test("@smoke successful login with valid credentials redirects to home", async ({
-    page,
-  }) => {
+  test("@smoke successful login with valid credentials redirects to home", async ({ page }) => {
     await loginPage.fillPassword(USERS.base_user.password);
     await loginPage.clickSubmit();
 

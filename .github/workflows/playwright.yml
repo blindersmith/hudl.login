@@ -29,7 +29,7 @@ jobs:
         run: npm run lint
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Run Playwright tests
         run: npx playwright test
@@ -41,7 +41,7 @@ jobs:
           HUDL_ADMIN_EMAIL: ${{ secrets.HUDL_ADMIN_EMAIL }}
           HUDL_ADMIN_PASSWORD: ${{ secrets.HUDL_ADMIN_PASSWORD }}
 
-      - name: Upload HTML report
+      - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -56,6 +56,18 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 7
+
+      - name: Generate Allure report
+        if: always()
+        run: npx allure generate --output allure-report allure-results
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report/
+          retention-days: 30
 
       # ------------------------------------------------------------------ #
       # Slack notification — add SLACK_WEBHOOK_URL to repository secrets    #
