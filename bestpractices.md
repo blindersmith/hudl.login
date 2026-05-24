@@ -104,13 +104,13 @@ export class ExamplePage {
 
 ### Method Naming
 
-| Category   | Prefix     | Example                               |
-|------------|------------|---------------------------------------|
-| Actions    | `click`, `fill`, `select` | `clickContinue()`, `fillEmail(email)` |
-| Data reads | `get`      | `getErrorMessageText()`               |
-| Navigation | `navigateTo`, `toXxxByURL` | `toLoginByURL()`              |
-| Waits      | `waitFor`  | `waitForPasswordStep()`               |
-| Combined flows | verb phrase | `login(email, password)`, `submitEmail(email)` |
+| Category       | Prefix                     | Example                                        |
+| -------------- | -------------------------- | ---------------------------------------------- |
+| Actions        | `click`, `fill`, `select`  | `clickContinue()`, `fillEmail(email)`          |
+| Data reads     | `get`                      | `getErrorMessageText()`                        |
+| Navigation     | `navigateTo`, `toXxxByURL` | `toLoginByURL()`                               |
+| Waits          | `waitFor`                  | `waitForPasswordStep()`                        |
+| Combined flows | verb phrase                | `login(email, password)`, `submitEmail(email)` |
 
 ### What NOT to Do
 
@@ -231,10 +231,13 @@ await page.waitForLoadState("networkidle");
 
 ```typescript
 await expect
-  .poll(async () => {
-    const value = await timerTextbox.inputValue();
-    return diffInSeconds(startValue, value);
-  }, { timeout: 20_000 })
+  .poll(
+    async () => {
+      const value = await timerTextbox.inputValue();
+      return diffInSeconds(startValue, value);
+    },
+    { timeout: 20_000 },
+  )
   .toBeGreaterThanOrEqual(MIN_SECONDS);
 ```
 
@@ -388,6 +391,7 @@ Delete created data in `afterEach` or `afterAll` via API calls where applicable.
 ### Global Auth Setup
 
 `utils/auth.setup.ts` runs as a dedicated Playwright setup project before the test suite. It:
+
 1. Navigates to `/login`
 2. Completes the full two-step login (email → Continue → password → Continue)
 3. Waits for redirect away from `/login`
@@ -433,7 +437,7 @@ Supported environments and their base URLs are defined in `utils/env.ts`:
 ```typescript
 export const BASE_URLS: Record<Environment, string> = {
   production: "https://www.hudl.com",
-  staging:    "https://staging.hudl.com",
+  staging: "https://staging.hudl.com",
 };
 ```
 
@@ -463,8 +467,7 @@ export class Navigation {
 await element.click().catch(() => {});
 
 // CORRECT — if a failure is expected and safe, document it
-await spinner.waitFor({ state: "visible", timeout: 2000 })
-  .catch(() => {}); // Spinner may appear too briefly to catch — not a failure
+await spinner.waitFor({ state: "visible", timeout: 2000 }).catch(() => {}); // Spinner may appear too briefly to catch — not a failure
 ```
 
 ### Do Not Use `isVisible()` as Conditional Logic
@@ -508,18 +511,18 @@ await element.click();
 
 ## Anti-Pattern Quick Reference
 
-| Pattern | Why It's Wrong | Fix |
-|---------|---------------|-----|
-| `waitForTimeout(N)` | Arbitrary delay | `waitFor()` on a specific element |
-| `waitForLoadState('networkidle')` | Hangs on background requests | Wait for a specific element |
-| `expect(locator).toBeVisible()` as a mid-flow wait | `expect` is for assertions | `locator.waitFor({ state: 'visible' })` |
-| `expect(await locator.isVisible()).toBe(true)` | Non-retrying boolean | `await expect(locator).toBeVisible()` |
-| Assertions in page objects | Breaks POM encapsulation | Return data; assert in spec |
-| `getByRole("button", { name: "Continue" })` without `exact: true` | Matches social login buttons too | Add `exact: true` |
-| `getByLabel("Password")` on Hudl step 2 | Matches show/hide toggle button too | Use `locator('[data-qa-id="password-input-input"]')` |
-| Exposing raw locators via getters | Breaks POM encapsulation | Encapsulate in action methods |
-| `isVisible()` as conditional check | Silently skips missing elements | `waitFor()` |
-| `.catch(() => {})` without comment | Hides real failures | Document why error is expected |
-| `console.log` in committed code | Noise in output | Remove before PR |
-| `test.only` in committed code | Blocks all other tests | Remove before PR |
-| Hardcoded credentials | Security risk | Use `USERS.base_user.email` from env |
+| Pattern                                                           | Why It's Wrong                      | Fix                                                  |
+| ----------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------- |
+| `waitForTimeout(N)`                                               | Arbitrary delay                     | `waitFor()` on a specific element                    |
+| `waitForLoadState('networkidle')`                                 | Hangs on background requests        | Wait for a specific element                          |
+| `expect(locator).toBeVisible()` as a mid-flow wait                | `expect` is for assertions          | `locator.waitFor({ state: 'visible' })`              |
+| `expect(await locator.isVisible()).toBe(true)`                    | Non-retrying boolean                | `await expect(locator).toBeVisible()`                |
+| Assertions in page objects                                        | Breaks POM encapsulation            | Return data; assert in spec                          |
+| `getByRole("button", { name: "Continue" })` without `exact: true` | Matches social login buttons too    | Add `exact: true`                                    |
+| `getByLabel("Password")` on Hudl step 2                           | Matches show/hide toggle button too | Use `locator('[data-qa-id="password-input-input"]')` |
+| Exposing raw locators via getters                                 | Breaks POM encapsulation            | Encapsulate in action methods                        |
+| `isVisible()` as conditional check                                | Silently skips missing elements     | `waitFor()`                                          |
+| `.catch(() => {})` without comment                                | Hides real failures                 | Document why error is expected                       |
+| `console.log` in committed code                                   | Noise in output                     | Remove before PR                                     |
+| `test.only` in committed code                                     | Blocks all other tests              | Remove before PR                                     |
+| Hardcoded credentials                                             | Security risk                       | Use `USERS.base_user.email` from env                 |

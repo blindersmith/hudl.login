@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:stress": "bash run-stress-test.sh",
+    "test:stress:headed": "bash run-stress-test.sh --headed"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",

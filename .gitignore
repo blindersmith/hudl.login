@@ -7,3 +7,4 @@ allure-results/
 allure-report/
 *.log
 dist/
+stress-report*.md

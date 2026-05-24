@@ -40,5 +40,21 @@ export default defineConfig({
       },
       dependencies: ["setup"],
     },
+    {
+      name: "mobile-chrome",
+      use: {
+        ...devices["Pixel 7"],
+        storageState: ".auth/user.json",
+      },
+      dependencies: ["setup"],
+    },
+    {
+      name: "mobile-safari",
+      use: {
+        ...devices["iPhone 15"],
+        storageState: ".auth/user.json",
+      },
+      dependencies: ["setup"],
+    },
   ],
 });
