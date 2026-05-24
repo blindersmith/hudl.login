@@ -36,7 +36,7 @@ npm install
 ### 3. Install Playwright browsers
 
 ```bash
-npx playwright install chromium
+npx playwright install chromium webkit
 ```
 
 ### 4. Configure environment variables
