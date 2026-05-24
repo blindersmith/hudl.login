@@ -30,6 +30,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium webkit
 
+      - name: Create auth directory
+        run: mkdir -p .auth
+
       - name: Run Playwright tests
         run: npx playwright test
         env:

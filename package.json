@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:stress": "bash run-stress-test.sh",
-    "test:stress:headed": "bash run-stress-test.sh --headed"
+    "test:stress:headed": "bash run-stress-test.sh --headed",
+    "test:stress:full": "bash run-stress-test.sh --both"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",

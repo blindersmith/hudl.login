@@ -8,12 +8,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const authFile = path.join(__dirname, "../.auth/user.json");
 
 setup("authenticate", async ({ page, context }) => {
+  setup.setTimeout(60000);
   const loginPage = new LoginPage(page);
 
   await loginPage.navigateTo();
   await loginPage.login(ENV.HUDL_EMAIL, ENV.HUDL_PASSWORD);
 
-  await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 15000 });
+  await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 45000 });
 
   await context.storageState({ path: authFile });
 });

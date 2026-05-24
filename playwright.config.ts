@@ -12,12 +12,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 2,
+  workers: 1,
   reporter: [
     ["list"],
     ["html", { open: "never" }],
-    ["allure-playwright"],
-    ...(process.env.CI ? ([["github"] as ["github"]] as const) : []),
+    ...(process.env.CI ? ([["allure-playwright"], ["github"] as ["github"]] as const) : []),
   ],
   use: {
     baseURL: BASE_URLS[currentEnv],

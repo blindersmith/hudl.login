@@ -3,29 +3,71 @@ import { Page, Locator } from "@playwright/test";
 export class LoginPage {
   readonly page: Page;
 
-  // Step 1 — email
+  // ── Shared (present on both step 1 and step 2) ───────────────────────────
+  readonly hudlLogo: Locator;
+  readonly pageHeading: Locator;
+  readonly orDivider: Locator;
+  readonly continueWithGoogleButton: Locator;
+  readonly continueWithFacebookButton: Locator;
+  readonly continueWithAppleButton: Locator;
+  readonly createAccountLink: Locator;
+  readonly legalText: Locator;
+  readonly privacyPolicyLink: Locator;
+  readonly termsOfServiceLink: Locator;
+
+  // ── Step 1 — Email ───────────────────────────────────────────────────────
+  readonly emailLabel: Locator;
   readonly emailInput: Locator;
   readonly continueButton: Locator;
 
-  // Step 2 — password
+  // ── Step 2 — Password ────────────────────────────────────────────────────
+  readonly emailDisplayLabel: Locator;
+  readonly emailDisplay: Locator;
+  readonly editEmailLink: Locator;
+  readonly passwordLabel: Locator;
+  readonly passwordRequiredIndicator: Locator;
   readonly passwordInput: Locator;
+  readonly showHidePasswordButton: Locator;
   readonly submitButton: Locator;
   readonly forgotPasswordLink: Locator;
 
-  // Feedback
+  // ── Feedback ─────────────────────────────────────────────────────────────
   readonly errorMessage: Locator;
 
   constructor(page: Page) {
     this.page = page;
 
+    // Shared
+    this.hudlLogo = page.locator("img").first(); // no alt/aria-label on Hudl logo
+    this.pageHeading = page.getByRole("heading", { name: "Log In" });
+    this.orDivider = page.getByText("or", { exact: true });
+    this.continueWithGoogleButton = page.getByRole("button", { name: "Continue with Google" });
+    this.continueWithFacebookButton = page.getByRole("button", { name: "Continue with Facebook" });
+    this.continueWithAppleButton = page.getByRole("button", { name: "Continue with Apple" });
+    this.createAccountLink = page.getByRole("link", { name: "Create Account" });
+    this.legalText = page.getByText(/By continuing, you agree/);
+    this.privacyPolicyLink = page.getByRole("link", { name: "Privacy Policy" });
+    this.termsOfServiceLink = page.getByRole("link", { name: "Terms of Service" });
+
     // Step 1
+    this.emailLabel = page.locator('[data-qa-id="email-input-label"]');
     this.emailInput = page.getByLabel("Email", { exact: false });
     this.continueButton = page.getByRole("button", { name: "Continue", exact: true });
 
-    // data-qa-id targets the input specifically — getByLabel("Password") also resolves to
-    // the show/hide toggle button and throws a strict-mode violation
+    // Step 2
+    this.emailDisplayLabel = page.locator('[data-qa-id="email-display-label"]');
+    // read-only field showing which email is being authenticated
+    this.emailDisplay = page.locator('[data-qa-id="email-display-input"]');
+    // aria-label="Edit email address" is stable for role-based targeting
+    this.editEmailLink = page.getByRole("link", { name: "Edit email address" });
+    this.passwordLabel = page.locator('[data-qa-id="password-input-label"]');
+    this.passwordRequiredIndicator = page.locator('[data-qa-id="password-input-required-indicator"]');
+    // data-qa-id used — getByLabel("Password") also resolves to the show/hide toggle
+    // and throws a strict-mode violation
     this.passwordInput = page.locator('[data-qa-id="password-input-input"]');
-    // Step 2 submit is labeled "Continue", same text as step 1 (different page/domain)
+    // aria-label toggles between "Show password"/"Hide password" on click — data-qa-id is stable
+    this.showHidePasswordButton = page.locator('[data-qa-id="toggle-password-visibility"]');
+    // step 2 submit is labeled "Continue", same text as step 1 (different page/domain)
     this.submitButton = page.getByRole("button", { name: "Continue", exact: true });
     this.forgotPasswordLink = page.getByRole("link", { name: /forgot/i });
 
@@ -58,9 +100,19 @@ export class LoginPage {
     await this.submitButton.click();
   }
 
+  async clickShowHidePassword(): Promise<void> {
+    await this.showHidePasswordButton.waitFor({ state: "visible" });
+    await this.showHidePasswordButton.click();
+  }
+
   async clickForgotPassword(): Promise<void> {
     await this.forgotPasswordLink.waitFor({ state: "visible" });
     await this.forgotPasswordLink.click();
+  }
+
+  async clickCreateAccount(): Promise<void> {
+    await this.createAccountLink.waitFor({ state: "visible" });
+    await this.createAccountLink.click();
   }
 
   async login(email: string, password: string): Promise<void> {
